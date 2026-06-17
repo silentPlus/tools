@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美国 Google Play IAA 游戏 Top 10 榜单</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    line-height: 1.6;
+    padding: 24px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  .header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 32px;
+    color: white;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .header h1 { font-size: 28px; margin-bottom: 8px; }
+  .header .meta { font-size: 14px; opacity: 0.85; }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .card-header h2 { font-size: 20px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-pure { background: #e8f5e9; color: #2e7d32; }
+  .badge-mixed { background: #fff3e0; color: #e65100; }
+  .badge-imp { background: #e3f2fd; color: #1565c0; }
+  .rank-list { padding: 0; }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid #f5f5f5;
+    gap: 14px;
+    transition: background 0.15s;
+  }
+  .rank-item:hover { background: #fafafa; }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: #ffd700; color: #333; }
+  .rank-2 { background: #c0c0c0; color: #333; }
+  .rank-3 { background: #cd7f32; color: white; }
+  .rank-other { background: #e0e0e0; color: #555; }
+  .game-info { flex: 1; min-width: 0; }
+  .game-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-dev { font-size: 12px; color: #888; }
+  .game-meta { display: flex; gap: 12px; font-size: 12px; color: #666; margin-top: 2px; }
+  .game-tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tag-iaa { background: #e8f5e9; color: #2e7d32; }
+  .tag-iaaiap { background: #fff3e0; color: #e65100; }
+  .tag-iap { background: #e3f2fd; color: #1565c0; }
+  .tag-genre { background: #f3e5f5; color: #7b1fa2; }
+  .tag-installs { background: #fce4ec; color: #c62828; }
+  .rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #f9a825;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .stat-val { font-size: 28px; font-weight: 700; color: #667eea; }
+  .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+  .note {
+    background: #fffde7;
+    border-left: 4px solid #ffd600;
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  .pure-iaa-section {
+    background: #e8f5e9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 12px;
+  }
+  .pure-iaa-section h3 { font-size: 15px; color: #2e7d32; margin-bottom: 8px; }
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    .rank-item { flex-wrap: wrap; }
+    .game-tags { width: 100%; margin-top: 6px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>美国 Google Play IAA 游戏 Top 10</h1>
+  <div class="meta">
+    数据抓取时间: 2026-06-17 &nbsp;|&nbsp; 地区: 美国 (United States) &nbsp;|&nbsp; 平台: Google Play
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-box">
+    <div class="stat-val">47/60</div>
+    <div class="stat-label">免费榜 IAA 游戏占比</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val">7</div>
+    <div class="stat-label">纯 IAA 游戏 (仅广告变现)</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val">78.3%</div>
+    <div class="stat-label">Top Free 榜 IAA 渗透率</div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>说明：</strong>IAA = In-App Advertising (广告变现)。筛选条件：免费 + 包含广告。
+  分为 <span class="tag tag-iaa">纯IAA</span>（仅广告、无内购）和 <span class="tag tag-iaaiap">IAA+IAP</span>（广告+内购混合变现）。
+  "最新免费"榜单因 Google Play API 限制，通过最新发布搜索 + 变现数据交叉筛选获得。
+</div>
+
+<!-- Top Free IAA Games -->
+<div class="card">
+  <div class="card-header">
+    <h2>🏆 免费游戏榜 — Top 10 IAA 游戏</h2>
+  </div>
+  <div class="rank-list">
+    <div class="rank-item">
+      <div class="rank-num rank-1">1</div>
+      <div class="game-info">
+        <div class="game-name">Meowdoku: Brain Puzzle Games</div>
+        <div class="game-dev">Oakever Games</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.60</span>
+          <span>📥 1M+</span>
+          <span>📅 2026-04-24</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaa">纯IAA</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-2">2</div>
+      <div class="game-info">
+        <div class="game-name">Arrows – Puzzle Escape</div>
+        <div class="game-dev">Lessmore GmbH</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.82</span>
+          <span>📥 50M+</span>
+          <span>📅 2025-07-09</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-3">3</div>
+      <div class="game-info">
+        <div class="game-name">Amaze GO!</div>
+        <div class="game-dev">Oakever Games</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.62</span>
+          <span>📥 50M+</span>
+          <span>📅 2026-02-13</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaa">纯IAA</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">4</div>
+      <div class="game-info">
+        <div class="game-name">Vita Mahjong</div>
+        <div class="game-dev">Vita Studio.</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.78</span>
+          <span>📥 100M+</span>
+          <span>📅 2024-01-09</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Board</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">5</div>
+      <div class="game-info">
+        <div class="game-name">Block Blast!</div>
+        <div class="game-dev">HungryStudio</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.82</span>
+          <span>📥 500M+</span>
+          <span>📅 2022-09-23</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">6</div>
+      <div class="game-info">
+        <div class="game-name">EA SPORTS FC Soccer Mobile 26</div>
+        <div class="game-dev">ELECTRONIC ARTS</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.54</span>
+          <span>📥 500M+</span>
+          <span>📅 2016-10-10</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Sports</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">7</div>
+      <div class="game-info">
+        <div class="game-name">Color Block: Combo Blast</div>
+        <div class="game-dev">Ivy</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.56</span>
+          <span>📥 10M+</span>
+          <span>📅 2019-04-17</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">8</div>
+      <div class="game-info">
+        <div class="game-name">Arrow Puzzle: Tap Puzzle Games</div>
+        <div class="game-dev">Easybrain</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.85</span>
+          <span>📥 10M+</span>
+          <span>📅 2025-11-14</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">9</div>
+      <div class="game-info">
+        <div class="game-name">Magic Sort!</div>
+        <div class="game-dev">Grand Games A.Ş.</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.52</span>
+          <span>📥 10M+</span>
+          <span>📅 2024-06-26</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">10</div>
+      <div class="game-info">
+        <div class="game-name">Yarn Loop</div>
+        <div class="game-dev">Combo Game</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.49</span>
+          <span>📥 1M+</span>
+          <span>📅 2025-12-19</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+  </div>
+  <div class="pure-iaa-section">
+    <h3>💎 Top Free 榜中 "纯IAA"（只有广告、无内购）的游戏</h3>
+    <div style="font-size:13px;color:#555;line-height:1.8">
+      <strong>#1 Meowdoku</strong> (Oakever Games) · ★4.60 · Puzzle<br>
+      <strong>#3 Amaze GO!</strong> (Oakever Games) · ★4.62 · Puzzle<br>
+      <strong>#36 Jewel Coloring</strong> (TaTa Game) · ★4.80 · Casual<br>
+      <strong>#43 Arrows Puzzle Relax</strong> (olfa) · ★4.42 · Casual<br>
+      <strong>#44 Colorful Soda Sort</strong> (Space Kraft Media) · ★4.26 · Casual<br>
+      <strong>#55 Magic Level 9 Music Piano</strong> (Beatwave Studio) · ★4.77 · Music<br>
+      <strong>#56 Geometry Dash Lite</strong> (RobTop Games) · ★4.41 · Arcade<br>
+      <strong>#57 Mini Challenges: Calm Games</strong> (UltraPub) · ★4.85 · Casual
+    </div>
+  </div>
+</div>
+
+<!-- Top New Free IAA Games -->
+<div class="card">
+  <div class="card-header">
+    <h2>🆕 最新免费游戏 — Top 10 IAA 游戏</h2>
+  </div>
+  <div style="padding: 8px 24px; font-size:12px; color:#999;">
+    注：Google Play 的 "Top New Free" API 集合当前不可用，本榜单通过"最新发布游戏搜索 + IAA 变现数据交叉筛选"获得，非严格的排行榜。
+  </div>
+  <div class="rank-list">
+    <div class="rank-item">
+      <div class="rank-num rank-1">1</div>
+      <div class="game-info">
+        <div class="game-name">8 Ball Pool</div>
+        <div class="game-dev">Miniclip.com</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.80</span>
+          <span>📥 1B+</span>
+          <span>📅 2013-01-23</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Sports</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-2">2</div>
+      <div class="game-info">
+        <div class="game-name">Asphalt 8 - Car Racing Game</div>
+        <div class="game-dev">Gameloft SE</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.58</span>
+          <span>📥 500M+</span>
+          <span>📅 2013-08-20</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Racing</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-3">3</div>
+      <div class="game-info">
+        <div class="game-name">Carrom Pool: Disc Game</div>
+        <div class="game-dev">Miniclip.com</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.48</span>
+          <span>📥 500M+</span>
+          <span>📅 2019-03-26</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Sports</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">4</div>
+      <div class="game-info">
+        <div class="game-name">Candy Crush Saga</div>
+        <div class="game-dev">King</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.63</span>
+          <span>📥 1B+</span>
+          <span>📅 2012-11-15</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Casual</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">5</div>
+      <div class="game-info">
+        <div class="game-name">Traffic Rider</div>
+        <div class="game-dev">skgames</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.49</span>
+          <span>📥 500M+</span>
+          <span>📅 2016-01-11</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Racing</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">6</div>
+      <div class="game-info">
+        <div class="game-name">Kalliu Game World: Life Story</div>
+        <div class="game-dev">Joltrix</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.73</span>
+          <span>📥 50M+</span>
+          <span>📅 2024-09-13</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Puzzle</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">7</div>
+      <div class="game-info">
+        <div class="game-name">Dream League Soccer 2026</div>
+        <div class="game-dev">First Touch Games Ltd.</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.45</span>
+          <span>📥 100M+</span>
+          <span>📅 2020-01-14</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Sports</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">8</div>
+      <div class="game-info">
+        <div class="game-name">Plants vs. Zombies™</div>
+        <div class="game-dev">ELECTRONIC ARTS</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 3.79</span>
+          <span>📥 500M+</span>
+          <span>📅 2014-11-13</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Strategy</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">9</div>
+      <div class="game-info">
+        <div class="game-name">Angry Birds 2</div>
+        <div class="game-dev">Rovio Entertainment Oy</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.10</span>
+          <span>📥 100M+</span>
+          <span>📅 2015-07-23</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Casual</span>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-num rank-other">10</div>
+      <div class="game-info">
+        <div class="game-name">Temple Run 2: Endless Escape</div>
+        <div class="game-dev">Imangi Studios</div>
+        <div class="game-meta">
+          <span class="rating-stars">★ 4.09</span>
+          <span>📥 1B+</span>
+          <span>📅 2013-01-23</span>
+        </div>
+      </div>
+      <div class="game-tags">
+        <span class="tag tag-iaaiap">IAA+IAP</span>
+        <span class="tag tag-genre">Action</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;color:#bbb;font-size:12px;padding:24px 0;">
+  数据来源: Google Play Store (美国区) · google-play-scraper · 抓取时间: 2026-06-17 16:54 CST
+</div>
+
+</div>
+</body>
+</html>

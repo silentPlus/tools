@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美国 Google Play IAA 游戏玩法深度分析</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --accent: #6366f1;
+    --accent-light: #eef2ff;
+    --iaa-badge: #f59e0b;
+    --pure-iaa: #10b981;
+    --genre-puzzle: #8b5cf6;
+    --genre-sports: #ef4444;
+    --genre-casual: #06b6d4;
+    --genre-strategy: #f97316;
+    --genre-racing: #eab308;
+    --genre-simulation: #ec4899;
+    --rank-gold: #f59e0b;
+    --rank-silver: #94a3b8;
+    --rank-bronze: #d97706;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #6366f1 100%);
+    color: white;
+    border-radius: 16px;
+    margin-bottom: 30px;
+  }
+  .header h1 { font-size: 2.2em; margin-bottom: 8px; }
+  .header .subtitle { font-size: 1.1em; opacity: 0.9; }
+  .header .meta {
+    display: flex; gap: 20px; justify-content: center; margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .header .meta span {
+    background: rgba(255,255,255,0.15);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.9em;
+  }
+
+  .section-title {
+    font-size: 1.6em;
+    margin: 40px 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--accent);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .icon { font-size: 1.3em; }
+
+  .game-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .game-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+  .rank-badge {
+    width: 54px; height: 54px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5em; font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .rank-2 { background: linear-gradient(135deg, #94a3b8, #64748b); }
+  .rank-3 { background: linear-gradient(135deg, #d97706, #b45309); }
+  .rank-default { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+  .game-info h3 { font-size: 1.15em; margin-bottom: 4px; }
+  .game-info .dev { color: var(--text-secondary); font-size: 0.9em; margin-bottom: 6px; }
+  .game-info .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+  }
+  .badge-iaa { background: #fef3c7; color: #92400e; }
+  .badge-pure-iaa { background: #d1fae5; color: #065f46; }
+  .badge-genre { background: #eef2ff; color: #4338ca; }
+  .badge-rating { background: #f0fdf4; color: #166534; }
+  .badge-installs { background: #faf5ff; color: #6b21a8; }
+
+  .gameplay-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-top: 10px;
+  }
+  .gameplay-box h4 {
+    font-size: 0.9em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .gameplay-box p { font-size: 0.95em; color: #334155; line-height: 1.7; }
+  .gameplay-box ul { margin: 6px 0 0 18px; }
+  .gameplay-box li { font-size: 0.9em; color: #475569; margin-bottom: 4px; }
+
+  .insight-box {
+    background: #fffbeb;
+    border-left: 4px solid var(--iaa-badge);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-top: 8px;
+  }
+  .insight-box h4 {
+    font-size: 0.85em;
+    color: #92400e;
+    margin-bottom: 4px;
+  }
+  .insight-box p { font-size: 0.9em; color: #78350f; }
+
+  .summary-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    margin: 30px 0;
+  }
+  .summary-section h3 { margin-bottom: 16px; font-size: 1.3em; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--accent-light);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 2em; font-weight: 800; color: var(--accent); }
+  .stat-card .label { font-size: 0.85em; color: var(--text-secondary); margin-top: 4px; }
+
+  .insight-list { list-style: none; }
+  .insight-list li {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    font-size: 0.95em;
+    border-left: 3px solid #10b981;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+  }
+
+  @media (max-width: 640px) {
+    .game-card { grid-template-columns: 1fr; }
+    .rank-badge { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🎮 美国 Google Play IAA 游戏<br>玩法深度分析</h1>
+  <div class="subtitle">Top 10 免费榜 + 最新免费榜 · 2026年6月17日</div>
+  <div class="meta">
+    <span>🇺🇸 美国区</span>
+    <span>📊 共20款游戏</span>
+    <span>🕐 实时数据</span>
+  </div>
+</div>
+
+<!-- ==================== TOP FREE ==================== -->
+<div class="section-title"><span class="icon">🏆</span> 免费游戏榜 Top 10 IAA 玩法分析</div>
+
+<!-- #1 Meowdoku -->
+<div class="game-card">
+  <div class="rank-badge rank-1">1</div>
+  <div class="game-info">
+    <h3>🐱 Meowdoku: Brain Puzzle Games</h3>
+    <div class="dev">Oakever Games · ⭐4.6 · 100万+ 下载 · 纯IAA</div>
+    <div class="tags">
+      <span class="badge badge-pure-iaa">纯IAA</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.60</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>数独 + 扫雷的融合体。</strong>棋盘被划分为不同颜色的区域，玩家需要在每个区域内恰好放置一只猫，且猫与猫之间不能在同一行、同一列、甚至不能对角线相邻。每次放置需要双击方块，玩家只有3次容错机会（红心）。</p>
+      <ul>
+        <li>棋盘分为多个<strong>彩色区域</strong>，每个区域必须放恰好1只猫</li>
+        <li>猫的"领地"规则：同行、同列、相邻（含对角线）均不可有其他猫</li>
+        <li>通过逻辑推理<strong>逐步排除</strong>不可能位置，找到唯一解</li>
+        <li>每日更新谜题，支持全球排行榜</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>纯IAA模式（无内购），纯靠广告变现。关卡设计适合短时碎片化体验，每关约1-3分钟，插屏广告间隔自然。2026年4月新上线即登顶，数独+扫雷的独特玩法提供了强差异化。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #2 Arrows Puzzle Escape -->
+<div class="game-card">
+  <div class="rank-badge rank-2">2</div>
+  <div class="game-info">
+    <h3>🏹 Arrows – Puzzle Escape</h3>
+    <div class="dev">Lessmore GmbH · ⭐4.82 · 5000万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.82</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>箭头逃脱解谜。</strong>屏幕上布满指向不同方向的箭头，玩家需要规划正确的点击顺序，逐个将箭头从网格中移出。关键是箭头不能被其他箭头挡住——如果点击的箭头被阻挡，将失去一颗心。游戏有数千个手工设计的关卡，难度逐渐递增，没有计时器，纯靠逻辑和空间规划。</p>
+      <ul>
+        <li>观察所有箭头的<strong>朝向和阻挡关系</strong></li>
+        <li>规划<strong>点击顺序</strong>，先移除不会被挡住的箭头</li>
+        <li>随着关卡推进，箭头布局越来越复杂，需要<strong>多步前瞻</strong></li>
+        <li>提供提示系统，误操作有限生命</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>5000万+下载量，4.82超高评分说明玩法质量过硬。IAA+IAP混合变现，广告为主、内购辅助（额外生命、提示）。极简设计降低了美术成本，可以快速量产关卡。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #3 Amaze GO! -->
+<div class="game-card">
+  <div class="rank-badge rank-3">3</div>
+  <div class="game-info">
+    <h3>🌀 Amaze GO!</h3>
+    <div class="dev">Oakever Games · ⭐4.62 · 5000万+ 下载 · 纯IAA</div>
+    <div class="tags">
+      <span class="badge badge-pure-iaa">纯IAA</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.62</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>与 Arrows Puzzle Escape 同类型的箭头逃脱解谜。</strong>玩家需要引导箭头安全离开网格，避免碰撞。核心规则相同：规划正确的点击顺序，让每个箭头顺畅移出。Oakever Games 在箭头解谜品类布局了两款产品，分别面向不同用户群。</p>
+      <ul>
+        <li>点击箭头使其<strong>沿指向方向移出网格</strong></li>
+        <li>先移不挡路的箭头，<strong>逐步打开空间</strong></li>
+        <li>极简视觉设计，无计时器，无压力</li>
+        <li>2026年2月上线，迅速达到5000万下载</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>纯IAA模式，与Meowdoku同为Oakever Games出品。该公司在纯广告变现Puzzle赛道已形成矩阵优势（Meowdoku + Amaze GO! + Tile Explorer + Zen Word），通过高频广告展示实现规模化收益。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #4 Vita Mahjong -->
+<div class="game-card">
+  <div class="rank-badge rank-default">4</div>
+  <div class="game-info">
+    <h3>🀄 Vita Mahjong</h3>
+    <div class="dev">Vita Studio · ⭐4.78 · 1亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Board</span>
+      <span class="badge badge-rating">★4.78</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>经典麻将连连看（Mahjong Solitaire）。</strong>在一堆牌中找出两个相同图案的牌并配对消除。只有未被遮挡且左右至少有一侧自由的牌才能被选中。目标是清空整个牌堆。游戏设置在禅意数字花园主题中，提供大字体、触控友好的界面。</p>
+      <ul>
+        <li>从牌堆中<strong>匹配两张相同图案</strong>的麻将牌消除</li>
+        <li>只能选择<strong>未被遮挡</strong>的牌（上方无牌压住，左右至少一侧空闲）</li>
+        <li>需要策略性思考——优先消除<strong>深层被压住的牌</strong></li>
+        <li>数百个关卡，每日挑战，支持离线玩</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>1亿+下载的超级爆款。麻将连连看是全球认知度极高的经典玩法，用户画像偏向中老年休闲玩家，广告容忍度高。552万评分量说明DAU极其庞大。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #5 Block Blast! -->
+<div class="game-card">
+  <div class="rank-badge rank-default">5</div>
+  <div class="game-info">
+    <h3>🧱 Block Blast!</h3>
+    <div class="dev">HungryStudio · ⭐4.82 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.82</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>经典方块消除（类俄罗斯方块但不掉落）。</strong>底部给出3个不同形状的方块组，玩家将其拖放到8×8网格中。当任意一行或一列被填满时，该行/列消除，腾出空间。同时提供"经典模式"和"冒险模式"。核心是空间规划——合理摆放方块，创造连续消除连击。</p>
+      <ul>
+        <li>从下方选取<strong>方块组合</strong>拖放到网格上</li>
+        <li>填满整行或整列即<strong>消除得分</strong></li>
+        <li>同时消除多行/列触发<strong>Combo加分</strong></li>
+        <li>无时间限制，纯策略思考</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>5亿+下载的超级爆款，482万评分。方块消除是最经典的休闲玩法之一，用户粘性极高。IAA+IAP混合，每次游戏结束展示插屏广告是最主要的收入来源。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #6 EA Sports FC Mobile 26 -->
+<div class="game-card">
+  <div class="rank-badge rank-default">6</div>
+  <div class="game-info">
+    <h3>⚽ EA SPORTS FC Soccer Mobile 26</h3>
+    <div class="dev">Electronic Arts · ⭐4.54 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Sports</span>
+      <span class="badge badge-rating">★4.54</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>移动端足球模拟经营+实时对战。</strong>玩家组建自己的足球队，通过抽卡/Pack Opening获取球员，升级阵容。在实时对战中操控球员传球、射门、防守。包含多种模式：VS Attack（进攻回合制）、Head to Head（实时对抗）、联赛模式、经理模式等。2026赛季更新引入了改良裁判系统、新阵型、更多面部扫描。</p>
+      <ul>
+        <li><strong>球队管理：</strong>抽卡收集球员，升级、训练、搭配化学属性</li>
+        <li><strong>实时对战：</strong>触屏操控传球/射门/防守，与全球玩家对战</li>
+        <li><strong>多种模式：</strong>联赛、杯赛、限时活动、友谊赛</li>
+        <li>FIFA官方授权，真实球员和球队数据</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>EA旗舰IP，2197万评分、23万评论说明用户基数庞大。IAP是主要收入（球员卡包），广告为辅助。IAA在体育游戏中通常是激励视频广告（看广告获取免费卡包/体力）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #7 Color Block Combo Blast -->
+<div class="game-card">
+  <div class="rank-badge rank-default">7</div>
+  <div class="game-info">
+    <h3>🎨 Color Block: Combo Blast</h3>
+    <div class="dev">Ivy · ⭐4.56 · 1000万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.56</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>彩色砖块消除解谜。</strong>网格上分布着各种颜色的砖块，玩家点击相邻的同色砖块进行消除。核心机制是"Combo Blast"——一次性消除大量同色砖块触发连锁爆炸效果，清空更多区域。关卡有目标要求（如消除特定数量某颜色砖块），难度逐级递升。</p>
+      <ul>
+        <li>点击<strong>相邻同色砖块</strong>进行消除</li>
+        <li>大范围消除触发<strong>Combo连爆</strong>，产生范围清除</li>
+        <li>每关有<strong>特定消除目标</strong>，步数有限</li>
+        <li>2019年上线，长线运营6年+</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>经典三消/爆破变体，1000万+下载。IAA+IAP，广告主收入来自关卡间歇的插屏和激励视频（获取额外步数）。长线运营意味着稳定持续的广告收入。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #8 Arrow Puzzle - Tap Puzzle Games -->
+<div class="game-card">
+  <div class="rank-badge rank-default">8</div>
+  <div class="game-info">
+    <h3>🎯 Arrow Puzzle: Tap Puzzle Games</h3>
+    <div class="dev">Easybrain · ⭐4.85 · 1000万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.85</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>Arrow Puzzle 品类的第三款上榜产品。</strong>和 Arrows Puzzle Escape、Amaze GO! 核心玩法一致：网格里有指向不同方向的箭头，玩家需要按正确顺序点击箭头使其移出。如果点击的箭头前方有其他箭头阻挡，则失去生命。Easybrain 版本强调"轻柔脑力锻炼"，无压力无计时器。</p>
+      <ul>
+        <li>分析箭头朝向，规划<strong>最优点击顺序</strong></li>
+        <li>先点击<strong>不被阻挡的箭头</strong>，逐步释放被挡的箭头</li>
+        <li>每个关卡有<strong>固定生命值</strong>，出错消耗生命</li>
+        <li>上千个手工设计关卡，Easybrain品质打磨</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>箭头解谜品类在美国免费榜前十中占了3席（Arrows Escape #2、Amaze GO #3、Arrow Puzzle #8），说明该玩法正处于爆发期。Easybrain 是知名 Puzzle 大厂，品质和买量能力都很强。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #9 Magic Sort! -->
+<div class="game-card">
+  <div class="rank-badge rank-default">9</div>
+  <div class="game-info">
+    <h3>🧪 Magic Sort!</h3>
+    <div class="dev">Grand Games · ⭐4.52 · 1000万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.52</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>水排序解谜（Water Sort Puzzle）。</strong>多个试管中装有不同颜色的水层，玩家需要将水从一个试管倒入另一个试管，最终使每个试管中只有一种颜色。规则限制：只能向空试管倒水，或向顶部颜色相同的试管倒水；试管有容量上限。</p>
+      <ul>
+        <li>点击一个试管选择，再点击另一个试管<strong>倒入</strong></li>
+        <li>只能倒入<strong>顶层颜色相同</strong>的试管或空试管</li>
+        <li><strong>策略性倒水</strong>——需要提前规划多层颜色分离路径</li>
+        <li>1000+关卡，含日历打卡活动</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>土耳其 Grand Games 出品，水排序是一个成熟的 Puzzle 子品类。含日历式打卡活动提升留存。IAA+IAP混合，广告为主，内购为辅（撤销/提示）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #10 Yarn Loop -->
+<div class="game-card">
+  <div class="rank-badge rank-default">10</div>
+  <div class="game-info">
+    <h3>🧶 Yarn Loop</h3>
+    <div class="dev">Combo Game · ⭐4.49 · 100万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.49</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>传送带毛线解谜。</strong>色彩缤纷的毛线筒在传送带上移动，玩家需要在恰当的时机点击毛线筒，将其放置到传送带上，让它收集同颜色的针脚。画面顶部有一幅正在编织的图案，每次正确操作都会推进编织进度。核心是旋转传送带和颜色匹配的灵巧操作。</p>
+      <ul>
+        <li>传送带上不同颜色的<strong>毛线筒</strong>持续移动</li>
+        <li>点击毛线筒使其<strong>收集对应颜色的针脚</strong></li>
+        <li>管理传送带上最多<strong>5个待处理槽位</strong></li>
+        <li>目标：完成顶部的<strong>编织图案</strong></li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>2025年12月上线的新游戏，属于传送带解谜（Conveyor Puzzle）子品类。该品类近半年增长迅猛，Pixel Flow! 等产品月流水已破千万美元。Yarn Loop 以毛线编织为题材差异化了视觉表现。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== NEW FREE ==================== -->
+<div class="section-title"><span class="icon">🆕</span> 最新免费游戏榜 Top 10 IAA 玩法分析</div>
+
+<div style="background:#fef3c7;border-radius:10px;padding:14px 20px;margin-bottom:20px;border-left:4px solid #f59e0b;">
+  ⚠️ <strong>说明：</strong>由于 Google Play NEW_FREE 集合 API 不直接返回游戏排序榜单，以下榜单通过搜索交叉筛选+下载量/评分排序得到，非严格"最新排行"顺序。
+</div>
+
+<!-- #1 Google Play Games (skip - not a real game) -->
+<!-- #2 8 Ball Pool -->
+<div class="game-card">
+  <div class="rank-badge rank-default">2</div>
+  <div class="game-info">
+    <h3>🎱 8 Ball Pool</h3>
+    <div class="dev">Miniclip · ⭐4.80 · 10亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Sports</span>
+      <span class="badge badge-rating">★4.80</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>全球最火的在线台球游戏。</strong>玩家通过触屏操控球杆的方向和力度，与全球玩家进行实时或回合制8球/9球比赛。核心技巧是精准控制击球角度和力度。游戏包含金币系统——参加不同级别（入场费不同）的比赛，赢取金币升级装备。球杆有不同属性（力度、瞄准线长度、旋转等）。</p>
+      <ul>
+        <li>滑动屏幕<strong>调整方向</strong>，后拉控制<strong>击球力度</strong></li>
+        <li>8球制：把自己的花色球打完后打进<strong>黑8</strong>即可获胜</li>
+        <li>PVP匹配，<strong>金币为赌注</strong>进行比赛</li>
+        <li>收集和升级<strong>球杆</strong>，各有不同属性加成</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>10亿+下载，3140万评分。最成功的移动台球游戏。IAA+IAP，广告以激励视频为主（看广告获取金币/免费球杆试用），内购购买金币和高级球杆。Miniclip旗下还有Carrom Pool，形成休闲运动矩阵。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #3 Asphalt 8 -->
+<div class="game-card">
+  <div class="rank-badge rank-default">3</div>
+  <div class="game-info">
+    <h3>🏎️ Asphalt 8 - Car Racing Game</h3>
+    <div class="dev">Gameloft · ⭐4.58 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Racing</span>
+      <span class="badge badge-rating">★4.58</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>街机风格竞速游戏。</strong>驾驶超过300辆授权豪车和摩托车，在全球各地赛道（包括高空翻转、管道漂移等夸张设计）中竞速。核心操作是漂移和氮气加速——完美漂移积攒氮气，在直道上释放获得极速。游戏包含多种模式：经典赛、淘汰赛、传染赛、翻转跳跃挑战等。</p>
+      <ul>
+        <li>重力感应/触屏<strong>转向</strong>，点击屏幕<strong>漂移</strong></li>
+        <li><strong>漂移积攒氮气</strong> → 释放氮气获得爆发加速</li>
+        <li><strong>空中翻转和桶滚</strong>——腾空时完成特技获得额外氮气</li>
+        <li>收集和升级<strong>300+辆真实车辆</strong></li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>5亿+下载，1193万评分。Gameloft经典IP，2013年上线至今仍在运营。IAA+IAP，广告以激励视频、插屏为主；内购卖车和升级道具。作为成熟长线产品，广告和IAP收入比例相对均衡。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #4 Carrom Pool -->
+<div class="game-card">
+  <div class="rank-badge rank-default">4</div>
+  <div class="game-info">
+    <h3>🪙 Carrom Pool: Disc Game</h3>
+    <div class="dev">Miniclip · ⭐4.48 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Sports</span>
+      <span class="badge badge-rating">★4.48</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>印度传统桌游卡罗姆（Carrom）数字版。</strong>类似"手指台球"，玩家用手指弹击母片（Striker），将场上的彩色圆片打入四角袋口。目标是先把自己的全部圆片打入袋中。操作方式是按住母片拖拽调整方向和力度。支持PVP实时对战。</p>
+      <ul>
+        <li>按住母片<strong>滑动</strong>调整角度和力度，释放弹击</li>
+        <li>将自己的<strong>彩色圆片</strong>打入四角袋中</li>
+        <li>先清空自己所有圆片者获胜</li>
+        <li>收集升级不同<strong>母片和圆片皮肤</strong></li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>Miniclip 继 8 Ball Pool 后的又一款爆款。在印度、东南亚等市场极受欢迎。和8 Ball Pool一样的变现模式：激励视频+内购道具。Miniclip的双子星策略（台球+卡罗姆）覆盖了不同文化圈层用户。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #5 Candy Crush Saga -->
+<div class="game-card">
+  <div class="rank-badge rank-default">5</div>
+  <div class="game-info">
+    <h3>🍬 Candy Crush Saga</h3>
+    <div class="dev">King · ⭐4.63 · 10亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Casual</span>
+      <span class="badge badge-rating">★4.63</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>定义了"三消"品类的传奇游戏。</strong>交换相邻糖果，使三个或以上同色糖果连成一线消除。这是最简单的操作，但随着关卡推进，引入各种特殊糖果（条纹糖、包装糖、彩色炸弹）和障碍物（果冻、巧克力、甘草）。每种特殊糖果可以通过组合产生更强大的连锁效果。</p>
+      <ul>
+        <li>滑动<strong>交换相邻糖果</strong>，三连及以上消除</li>
+        <li>四连生成<strong>条纹糖</strong>（消除整行/列），五连生成<strong>彩色炸弹</strong></li>
+        <li><strong>组合特殊糖果</strong>产生超级效果（如条纹+彩色=全场同色消除）</li>
+        <li>每关有不同目标：消除果冻、收集食材、达到分数等</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>3892万评分，20亿+下载（含多平台）。King在三消品类引入广告较晚（2018年后），早期纯IAP。现在IAA+IAP，广告主要是激励视频（获取额外步数）。三消品类中最能证明"玩法深度支撑长线变现"的案例。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #6 Traffic Rider -->
+<div class="game-card">
+  <div class="rank-badge rank-default">6</div>
+  <div class="game-info">
+    <h3>🏍️ Traffic Rider</h3>
+    <div class="dev">skgames · ⭐4.49 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Racing</span>
+      <span class="badge badge-rating">★4.49</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>第一人称摩托车驾驶。</strong>在无尽的高速公路上驾驶摩托车，穿梭于车流之间。贴近车辆超车获得额外加分和速度奖励。重力感应控制方向，触屏控制油门和刹车。包含职业模式（完成特定任务目标）和无尽模式（追求最高分）。</p>
+      <ul>
+        <li><strong>重力感应</strong>倾斜手机控制左右变道</li>
+        <li>在城市道路/高速公路<strong>穿梭于车流中</strong></li>
+        <li><strong>近距离超车</strong>获得速度加成和更高分数</li>
+        <li>升级和购买<strong>30+种摩托车</strong></li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>5亿+下载的经典手游。skgames是单人开发者/小团队的典范案例。IAA+IAP，死亡后展示插屏广告是主要广告收入。摩托车第一人称视角的沉浸感是其最大差异化卖点。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #7 Kalliu Game World -->
+<div class="game-card">
+  <div class="rank-badge rank-default">7</div>
+  <div class="game-info">
+    <h3>🏠 Kalliu Game World: Life Story</h3>
+    <div class="dev">Joltrix · ⭐4.73 · 5000万+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Puzzle</span>
+      <span class="badge badge-rating">★4.73</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>开放世界生活模拟沙盒。</strong>灵感来自BabyBus系列，玩家在一个完全开放的3D世界中自由探索。可以创建角色、设计房子、在不同场景中生活（家庭、学校、购物、派对等）。支持多种交互动作：爱心手势、击掌、打雪仗等社交玩法。目标不是通关，而是创造和体验。</p>
+      <ul>
+        <li>自由探索<strong>开放式城市/社区</strong></li>
+        <li><strong>创建角色</strong>，自定义外观和服装</li>
+        <li><strong>设计房子</strong>，布置家具和装饰</li>
+        <li>在不同场景<strong>体验生活故事</strong>：学校上课、医院看病、超市购物</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>5000万+下载，面向儿童/青少年的沙盒模拟。IAA+IAP，激励视频广告非常适合该品类（看广告解锁新场景/服装）。45.7万评分说明用户参与度极高。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #8 Dream League Soccer 2026 -->
+<div class="game-card">
+  <div class="rank-badge rank-default">8</div>
+  <div class="game-info">
+    <h3>⚽ Dream League Soccer 2026</h3>
+    <div class="dev">First Touch Games · ⭐4.45 · 1亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Sports</span>
+      <span class="badge badge-rating">★4.45</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>移动端足球经理+实战结合。</strong>与FC Mobile不同，DLS更侧重单机经理模式——从低级别联赛开始，通过比赛赚取金币，升级球场设施，签约转会市场球员。实际操作中采用虚拟摇杆+按钮的经典控制。没有FIFA授权，球员名为虚构但可自行编辑。</p>
+      <ul>
+        <li>虚拟摇杆移动，按钮<strong>传球/射门/抢断</strong></li>
+        <li><strong>经理模式：</strong>签约球员、升级球场、爬升联赛排名</li>
+        <li><strong>球员养成：</strong>训练提升属性，球员有成长曲线</li>
+        <li>支持<strong>自定义球队</strong>、队徽、球衣</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>1亿+下载，1410万评分。First Touch Games的非授权足球精品。IAA+IAP，激励视频是核心广告形式（看广告获得金币/免费签约）。相比EA FC Mobile，DLS更便宜、更轻量，覆盖的是不同价格敏感度的用户群。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #9 Plants vs Zombies -->
+<div class="game-card">
+  <div class="rank-badge rank-default">9</div>
+  <div class="game-info">
+    <h3>🧟 Plants vs. Zombies™</h3>
+    <div class="dev">Electronic Arts · ⭐3.79 · 5亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Strategy</span>
+      <span class="badge badge-rating">★3.79</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>定义了"塔防"品类的经典之作。</strong>在5-6条横道上种植各种具有特殊能力的植物，阻止从右侧不断涌来的僵尸到达左侧的房子。每种植物消耗不同阳光（资源），向日葵生产阳光，豌豆射手攻击，坚果墙阻挡……僵尸类型繁多（撑杆跳、铁桶、舞王等）。策略核心是资源管理和植物组合。</p>
+      <ul>
+        <li>种植<strong>向日葵</strong>产生阳光资源</li>
+        <li>在僵尸行进路线上布置<strong>攻击/防御植物</strong></li>
+        <li>应对不同僵尸（撑杆跳→种高坚果，铁桶→用磁力菇）</li>
+        <li>白天/夜晚/泳池/屋顶多种场景变化</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>EA的免费版PvZ，573万评分（含因广告过多导致的低分）。免费版广告较为激进，核心变现模式已从原版买断转为IAA+IAP。低评分说明广告策略对用户体验造成了伤害——这是IAA过度投放的反面教材。</p>
+    </div>
+  </div>
+</div>
+
+<!-- #10 Angry Birds 2 -->
+<div class="game-card">
+  <div class="rank-badge rank-default">10</div>
+  <div class="game-info">
+    <h3>🐦 Angry Birds 2</h3>
+    <div class="dev">Rovio · ⭐4.10 · 1亿+ 下载 · IAA+IAP</div>
+    <div class="tags">
+      <span class="badge badge-iaa">IAA+IAP</span>
+      <span class="badge badge-genre">Casual</span>
+      <span class="badge badge-rating">★4.10</span>
+    </div>
+    <div class="gameplay-box">
+      <h4>🎯 核心玩法</h4>
+      <p><strong>物理弹射解谜。</strong>使用弹弓将各种愤怒的小鸟发射出去，摧毁绿猪的建筑物。每种鸟有特殊技能：红色鸟无技能、蓝色鸟可分身三只、黄色鸟加速冲刺、黑色鸟自爆。二代加入卡牌系统——每关可从卡牌中选择出场的小鸟，增加了策略性。还引入Boss战、每日挑战和竞技场。</p>
+      <ul>
+        <li><strong>拖拽弹弓</strong>瞄准并发射小鸟</li>
+        <li>利用<strong>物理引擎</strong>——计算抛物线、倒塌连锁反应</li>
+        <li>每关从卡牌<strong>选择出场小鸟</strong>（可多次尝试不同组合）</li>
+        <li>每种小鸟的<strong>特殊技能</strong>在飞行中点击触发</li>
+      </ul>
+    </div>
+    <div class="insight-box">
+      <h4>💡 IAA变现洞察</h4>
+      <p>经典IP的免费续作，630万评分（低于初代）。免费+F2P转变引入了体力和卡牌养成系统。IAA+IAP，广告展示频率较高导致部分玩家不满。Angry Birds 2是"付费转F2P+IAA"的行业经典案例。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SUMMARY ==================== -->
+<div class="section-title"><span class="icon">📊</span> 全局分析总结</div>
+
+<div class="summary-section">
+  <h3>核心数据</h3>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="value">9/10</div>
+      <div class="label">Puzzle品类占比（免费榜）</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">3款</div>
+      <div class="label">纯IAA游戏</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">3款</div>
+      <div class="label">箭头解谜变现</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">78.3%</div>
+      <div class="label">免费榜IAA渗透率</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px;">🔍 品类玩法洞察</h3>
+  <ul class="insight-list">
+    <li><strong>箭头解谜正在爆发：</strong>免费榜前十中有3款箭头解谜（Arrows Escape、Amaze GO!、Arrow Puzzle），该玩法规则极简但深度极高，非常适合碎片化广告变现。</li>
+    <li><strong>传送带解谜是新趋势：</strong>Yarn Loop 和 Pixel Flow! 代表的传送带（Conveyor）品类在2025下半年崛起，月流水已破千万美元级别。核心是"点击-匹配-队列管理"的微操作循环。</li>
+    <li><strong>水排序/分类解谜持续热门：</strong>Magic Sort! 属于成熟品类，玩法简单但关卡通膨空间大，日历打卡活动有效提升留存。</li>
+    <li><strong>经典玩法长线价值：</strong>Vita Mahjong（麻将连连看）、Block Blast!（方块消除）、Candy Crush Saga（三消）证明经典玩法+高频迭代=永续收入。</li>
+    <li><strong>Oakever Games 的纯IAA矩阵：</strong>Meowdoku + Amaze GO! + Zen Word + Tile Explorer，四款纯IAA产品均在Puzzle品类Top榜，证明了"无内购、纯广告"同样可以做到顶级规模。</li>
+    <li><strong>体育类IAA特点：</strong>EA FC、DLS 2026 等体育游戏广告以激励视频为主（看广告换金币/体力），用户接受度高，不影响核心体验。</li>
+    <li><strong>老牌IP的广告挑战：</strong>PvZ免费版（3.79分）和Angry Birds 2（4.10分）评分偏低，说明过度的广告策略损害了经典游戏的品牌价值。</li>
+  </ul>
+</div>
+
+<div class="footer">
+  数据来源：Google Play Store (美国区) · 抓取时间：2026年6月17日 · 通过 google-play-scraper 获取
+</div>
+
+</div>
+</body>
+</html>
