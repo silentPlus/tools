@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PL/SQL 常用命令速查</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6f8;
+    color: #1a1a2e;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 32px 0;
+    text-align: center;
+  }
+  .header h1 { font-size: 28px; font-weight: 600; letter-spacing: 1px; }
+  .header p { font-size: 14px; color: #8892b0; margin-top: 8px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    flex: 1;
+    min-width: 130px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #e8ecf1;
+  }
+  .stat-card .num { font-size: 32px; font-weight: 700; color: #185FA5; }
+  .stat-card .label { font-size: 12px; color: #8892b0; margin-top: 4px; }
+
+  .tab-nav {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: #fff;
+    padding: 6px;
+    border-radius: 10px;
+    border: 1px solid #e8ecf1;
+  }
+  .tab-btn {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5a6377;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: #f0f3f8; color: #1a1a2e; }
+  .tab-btn.active {
+    background: #185FA5;
+    color: #fff;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #185FA5;
+  }
+  .panel-desc {
+    font-size: 13px;
+    color: #5a6377;
+    margin-bottom: 16px;
+  }
+
+  .cmd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+  .cmd-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid #e8ecf1;
+    transition: all 0.2s;
+  }
+  .cmd-card:hover {
+    border-color: #185FA5;
+    box-shadow: 0 2px 12px rgba(24,95,165,0.08);
+  }
+  .cmd-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #185FA5;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  }
+  .cmd-desc {
+    font-size: 12px;
+    color: #5a6377;
+    margin-top: 4px;
+    margin-bottom: 10px;
+  }
+  .cmd-code {
+    display: block;
+    background: #f7f9fc;
+    border: 1px solid #e8ecf1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12px;
+    color: #0F6E56;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+
+  .tip-box {
+    margin-top: 24px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    border: 1px solid #e8ecf1;
+    border-left: 4px solid #EF9F27;
+  }
+  .tip-box h3 { font-size: 15px; color: #BA7517; margin-bottom: 12px; }
+  .tip-box ul { padding-left: 20px; font-size: 13px; color: #5a6377; line-height: 2; }
+  .tip-box li::marker { color: #BA7517; }
+
+  .example-block {
+    margin-top: 24px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    border: 1px solid #e8ecf1;
+    border-left: 4px solid #639922;
+  }
+  .example-block h3 { font-size: 15px; color: #3B6D11; margin-bottom: 12px; }
+  .example-block pre {
+    background: #f7f9fc;
+    border: 1px solid #e8ecf1;
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12px;
+    color: #1a1a2e;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .example-block pre .kw { color: #185FA5; }
+  .example-block pre .cmt { color: #8892b0; }
+  .example-block pre .str { color: #0F6E56; }
+
+  footer {
+    text-align: center;
+    padding: 32px 0;
+    font-size: 12px;
+    color: #8892b0;
+  }
+
+  @media (max-width: 700px) {
+    .cmd-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .stats-bar { gap: 8px; }
+    .stat-card { min-width: 80px; padding: 12px; }
+    .stat-card .num { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PL/SQL 常用命令速查</h1>
+  <p>Oracle PL/SQL 编程语言核心命令参考 &mdash; 共 8 大分类，覆盖日常开发场景</p>
+</div>
+
+<div class="container">
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="num">8</div><div class="label">大类</div></div>
+    <div class="stat-card"><div class="num">60</div><div class="label">命令</div></div>
+    <div class="stat-card"><div class="num">DESC</div><div class="label">查表结构</div></div>
+    <div class="stat-card"><div class="num">SELECT</div><div class="label">数据查询</div></div>
+    <div class="stat-card"><div class="num">DML</div><div class="label">增删改</div></div>
+    <div class="stat-card"><div class="num">PL</div><div class="label">流程控制</div></div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab(0)">表结构 & 查询</button>
+    <button class="tab-btn" onclick="switchTab(1)">DML 增删改</button>
+    <button class="tab-btn" onclick="switchTab(2)">DDL 数据定义</button>
+    <button class="tab-btn" onclick="switchTab(3)">TCL 事务控制</button>
+    <button class="tab-btn" onclick="switchTab(4)">控制结构</button>
+    <button class="tab-btn" onclick="switchTab(5)">游标</button>
+    <button class="tab-btn" onclick="switchTab(6)">异常处理</button>
+    <button class="tab-btn" onclick="switchTab(7)">存储过程 & 函数</button>
+  </div>
+
+  <!-- Panel 0: 表结构与数据查询 -->
+
+  <div class="panel active">
+    <h2 class="panel-title">表结构与数据查询（最常用）</h2>
+    <p class="panel-desc">日常开发中使用频率最高的命令集，涵盖查表结构、数据字典查询、SELECT 查询及结果处理。</p>
+
+    <h3 style="font-size:14px;font-weight:600;margin:20px 0 12px;color:#1a1a2e;">查看表结构</h3>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">DESC / DESCRIBE</div>
+        <div class="cmd-desc">查看表结构、字段类型及是否可为空</div>
+        <code class="cmd-code">DESC emp;
+DESCRIBE emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询所有表</div>
+        <div class="cmd-desc">查看当前用户下所有表</div>
+        <code class="cmd-code">SELECT table_name FROM user_tables;
+SELECT table_name FROM all_tables
+  WHERE owner = 'SCOTT';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询表字段</div>
+        <div class="cmd-desc">查看表的列名、类型、长度、注释</div>
+        <code class="cmd-code">SELECT column_name, data_type,
+       data_length, nullable
+FROM user_tab_columns
+WHERE table_name = 'EMP';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询字段注释</div>
+        <div class="cmd-desc">查看表/列的注释信息</div>
+        <code class="cmd-code">SELECT * FROM user_col_comments
+WHERE table_name = 'EMP';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询索引</div>
+        <div class="cmd-desc">查看表的索引及索引列</div>
+        <code class="cmd-code">SELECT i.index_name, i.uniqueness,
+       c.column_name
+FROM user_indexes i
+JOIN user_ind_columns c
+  ON i.index_name = c.index_name
+WHERE i.table_name = 'EMP';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询约束</div>
+        <div class="cmd-desc">查看主键、外键、唯一约束等</div>
+        <code class="cmd-code">SELECT constraint_name,
+       constraint_type, status
+FROM user_constraints
+WHERE table_name = 'EMP';
+
+-- P=主键 R=外键 U=唯一 C=CHECK</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询存储过程源码</div>
+        <div class="cmd-desc">从 user_source 查看过程/函数/包代码</div>
+        <code class="cmd-code">SELECT text FROM user_source
+WHERE name = 'PKG_EMP'
+ORDER BY line;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">查询表空间占用</div>
+        <div class="cmd-desc">查看表的行数和占用空间</div>
+        <code class="cmd-code">SELECT num_rows, blocks,
+       avg_row_len
+FROM user_tables
+WHERE table_name = 'EMP';
+
+-- 需先收集统计信息：
+-- EXEC DBMS_STATS.GATHER_TABLE_STATS('SCOTT','EMP');</code>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:600;margin:20px 0 12px;color:#1a1a2e;">SELECT 查询语句</h3>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">基础查询</div>
+        <div class="cmd-desc">SELECT / FROM / WHERE</div>
+        <code class="cmd-code">SELECT id, name, dept
+FROM emp
+WHERE dept = 'IT'
+  AND sal > 5000;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">聚合查询</div>
+        <div class="cmd-desc">GROUP BY / HAVING / 聚合函数</div>
+        <code class="cmd-code">SELECT dept, COUNT(*), AVG(sal)
+FROM emp
+GROUP BY dept
+HAVING COUNT(*) > 3;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">排序</div>
+        <div class="cmd-desc">ORDER BY / ASC / DESC / NULLS FIRST</div>
+        <code class="cmd-code">SELECT * FROM emp
+ORDER BY dept ASC, sal DESC
+NULLS LAST;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">连接查询</div>
+        <div class="cmd-desc">INNER JOIN / LEFT JOIN / RIGHT JOIN</div>
+        <code class="cmd-code">SELECT e.name, d.dept_name
+FROM emp e
+LEFT JOIN dept d
+  ON e.dept_id = d.id;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">子查询</div>
+        <div class="cmd-desc">标量 / IN / EXISTS 子查询</div>
+        <code class="cmd-code">SELECT name FROM emp
+WHERE dept_id IN (
+  SELECT id FROM dept
+  WHERE loc = '深圳'
+);
+
+SELECT e.name FROM emp e
+WHERE EXISTS (
+  SELECT 1 FROM orders o
+  WHERE o.emp_id = e.id
+);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">分页查询（Oracle 12c+）</div>
+        <div class="cmd-desc">OFFSET / FETCH 标准分页</div>
+        <code class="cmd-code">SELECT * FROM emp
+ORDER BY id
+OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">分页查询（传统）</div>
+        <div class="cmd-desc">ROWNUM 嵌套 / ROW_NUMBER()</div>
+        <code class="cmd-code">SELECT * FROM (
+  SELECT e.*, ROWNUM rn FROM emp e
+  WHERE ROWNUM <= 30
+) WHERE rn > 20;
+
+-- 推荐方式（支持排序）
+SELECT * FROM (
+  SELECT e.*,
+    ROW_NUMBER() OVER(ORDER BY id) rn
+  FROM emp e
+) WHERE rn BETWEEN 21 AND 30;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">UNION / INTERSECT / MINUS</div>
+        <div class="cmd-desc">集合运算：并集 / 交集 / 差集</div>
+        <code class="cmd-code">SELECT name FROM emp
+UNION ALL
+SELECT name FROM contractor;
+
+SELECT dept_id FROM emp
+INTERSECT
+SELECT id FROM dept;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">分析函数（窗口函数）</div>
+        <div class="cmd-desc">ROW_NUMBER / RANK / LAG / LEAD</div>
+        <code class="cmd-code">SELECT name, dept, sal,
+  RANK() OVER(
+    PARTITION BY dept
+    ORDER BY sal DESC
+  ) AS rank_in_dept,
+  LAG(sal) OVER(ORDER BY id) prev_sal
+FROM emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">常用函数</div>
+        <div class="cmd-desc">NVL / DECODE / TO_CHAR / SUBSTR / TRUNC 等</div>
+        <code class="cmd-code">NVL(comm, 0)              -- NULL替换
+DECODE(dept,'IT','技术',...) -- 条件转换
+TO_CHAR(SYSDATE,'YYYY-MM-DD')
+SUBSTR(name, 1, 3)
+TRUNC(SYSDATE)              -- 截断时间
+INSTR(name, '张')            -- 查找位置</code>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <h3>数据字典常用视图速记</h3>
+      <ul>
+        <li><code>USER_*</code> &mdash; 当前用户拥有的对象（最常用）</li>
+        <li><code>ALL_*</code> &mdash; 当前用户有权限访问的所有对象</li>
+        <li><code>DBA_*</code> &mdash; 数据库中所有对象（需要 DBA 权限）</li>
+        <li>高频表：<code>user_tables</code> / <code>user_tab_columns</code> / <code>user_indexes</code> / <code>user_constraints</code> / <code>user_source</code> / <code>user_views</code> / <code>user_triggers</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Panel 1: DDL -->
+
+  <div class="panel">
+    <h2 class="panel-title">DDL（数据定义语言）</h2>
+    <p class="panel-desc">用于创建、修改、删除数据库对象（表、索引、视图、序列等）的命令。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE TABLE</div>
+        <div class="cmd-desc">创建表</div>
+        <code class="cmd-code">CREATE TABLE emp (
+  id   NUMBER PRIMARY KEY,
+  name VARCHAR2(50) NOT NULL,
+  dept VARCHAR2(20)
+);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">ALTER TABLE</div>
+        <div class="cmd-desc">修改表结构（加列 / 改列 / 删列）</div>
+        <code class="cmd-code">ALTER TABLE emp ADD (sal NUMBER(10,2));
+ALTER TABLE emp MODIFY (name VARCHAR2(100));
+ALTER TABLE emp DROP COLUMN dept;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">DROP TABLE</div>
+        <div class="cmd-desc">删除表（加 PURGE 跳过回收站）</div>
+        <code class="cmd-code">DROP TABLE emp;
+DROP TABLE emp PURGE;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">TRUNCATE TABLE</div>
+        <div class="cmd-desc">快速清空表数据，DDL 操作，不可回滚</div>
+        <code class="cmd-code">TRUNCATE TABLE emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE INDEX</div>
+        <div class="cmd-desc">创建索引，加速查询</div>
+        <code class="cmd-code">CREATE INDEX idx_emp_name ON emp(name);
+CREATE UNIQUE INDEX uq_emp_id ON emp(id);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE SEQUENCE</div>
+        <div class="cmd-desc">创建自增序列（Oracle 无 AUTO_INCREMENT）</div>
+        <code class="cmd-code">CREATE SEQUENCE seq_emp_id
+  START WITH 1 INCREMENT BY 1;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE VIEW</div>
+        <div class="cmd-desc">创建视图，封装复杂查询</div>
+        <code class="cmd-code">CREATE OR REPLACE VIEW v_emp AS
+  SELECT id, name FROM emp WHERE dept='IT';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">COMMENT ON</div>
+        <div class="cmd-desc">为表 / 列添加注释</div>
+        <code class="cmd-code">COMMENT ON TABLE emp IS '员工表';
+COMMENT ON COLUMN emp.id IS '员工ID';</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 2: DML -->
+
+  <div class="panel">
+    <h2 class="panel-title">DML（数据操作语言）— 增删改</h2>
+    <p class="panel-desc">INSERT / UPDATE / DELETE 及批量操作命令。（SELECT 查询类命令已移至「表结构 & 查询」标签页）</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">INSERT</div>
+        <div class="cmd-desc">插入单行或多行数据</div>
+        <code class="cmd-code">INSERT INTO emp VALUES (1, 'Alice', 'IT');
+INSERT INTO emp (id, name) VALUES (2, 'Bob');
+INSERT ALL
+  INTO emp VALUES (3, 'Cathy', 'HR')
+  INTO emp VALUES (4, 'David', 'IT')
+SELECT 1 FROM DUAL;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">UPDATE</div>
+        <div class="cmd-desc">更新数据行</div>
+        <code class="cmd-code">UPDATE emp SET dept='Finance'
+WHERE id = 1;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">DELETE</div>
+        <div class="cmd-desc">删除数据行（DML，可回滚）</div>
+        <code class="cmd-code">DELETE FROM emp WHERE id = 1;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">SELECT INTO</div>
+        <div class="cmd-desc">查询结果直接赋值给 PL/SQL 变量</div>
+        <code class="cmd-code">SELECT name INTO v_name
+FROM emp WHERE id = 1;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">MERGE INTO</div>
+        <div class="cmd-desc">upsert：有则更新，无则插入</div>
+        <code class="cmd-code">MERGE INTO emp e
+USING src_tab s ON (e.id = s.id)
+WHEN MATCHED THEN
+  UPDATE SET e.name = s.name
+WHEN NOT MATCHED THEN
+  INSERT VALUES (s.id, s.name, s.dept);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">BULK COLLECT</div>
+        <div class="cmd-desc">批量获取数据到集合中</div>
+        <code class="cmd-code">SELECT id BULK COLLECT INTO v_ids
+FROM emp WHERE dept = 'IT';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">FORALL</div>
+        <div class="cmd-desc">批量 DML，减少上下文切换，性能大幅提升</div>
+        <code class="cmd-code">FORALL i IN 1..v_ids.COUNT
+  DELETE FROM emp WHERE id = v_ids(i);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">EXECUTE IMMEDIATE</div>
+        <div class="cmd-desc">动态构建并执行 SQL</div>
+        <code class="cmd-code">EXECUTE IMMEDIATE
+  'DELETE FROM emp WHERE id = :1'
+  USING v_id;</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 3: TCL -->
+
+  <div class="panel">
+    <h2 class="panel-title">TCL（事务控制语言）</h2>
+    <p class="panel-desc">管理事务的提交、回滚及保存点。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">COMMIT</div>
+        <div class="cmd-desc">提交当前事务，持久化所有变更</div>
+        <code class="cmd-code">COMMIT;
+COMMIT WORK;
+COMMIT COMMENT '批量更新完成';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">ROLLBACK</div>
+        <div class="cmd-desc">回滚整个事务，撤销所有未提交的变更</div>
+        <code class="cmd-code">ROLLBACK;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">SAVEPOINT</div>
+        <div class="cmd-desc">在事务中设置回滚标记点</div>
+        <code class="cmd-code">SAVEPOINT before_update;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">ROLLBACK TO SAVEPOINT</div>
+        <div class="cmd-desc">回滚到指定保存点，保留之前的部分提交</div>
+        <code class="cmd-code">ROLLBACK TO before_update;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">SET TRANSACTION</div>
+        <div class="cmd-desc">设置事务属性（隔离级别、只读）</div>
+        <code class="cmd-code">SET TRANSACTION READ ONLY;
+SET TRANSACTION ISOLATION LEVEL
+  SERIALIZABLE;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">LOCK TABLE</div>
+        <div class="cmd-desc">显式锁定表</div>
+        <code class="cmd-code">LOCK TABLE emp IN
+  EXCLUSIVE MODE NOWAIT;</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 4: 控制结构 -->
+
+  <div class="panel">
+    <h2 class="panel-title">控制结构</h2>
+    <p class="panel-desc">PL/SQL 块内部的条件判断与循环结构。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">IF ... ELSIF ... ELSE</div>
+        <div class="cmd-desc">条件分支判断</div>
+        <code class="cmd-code">IF v_score >= 90 THEN
+  v_grade := 'A';
+ELSIF v_score >= 80 THEN
+  v_grade := 'B';
+ELSE
+  v_grade := 'C';
+END IF;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CASE WHEN</div>
+        <div class="cmd-desc">多分支选择（可用于 SQL 语句）</div>
+        <code class="cmd-code">v_result := CASE
+  WHEN x = 1 THEN 'one'
+  WHEN x = 2 THEN 'two'
+  ELSE 'other'
+END;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">LOOP</div>
+        <div class="cmd-desc">基本无限循环，必须搭配 EXIT 退出</div>
+        <code class="cmd-code">LOOP
+  cnt := cnt + 1;
+  EXIT WHEN cnt > 10;
+END LOOP;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">WHILE LOOP</div>
+        <div class="cmd-desc">前置条件循环</div>
+        <code class="cmd-code">WHILE cnt <= 10 LOOP
+  cnt := cnt + 1;
+END LOOP;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">FOR LOOP</div>
+        <div class="cmd-desc">计数循环（REVERSE 倒序）</div>
+        <code class="cmd-code">FOR i IN 1..10 LOOP
+  DBMS_OUTPUT.PUT_LINE(i);
+END LOOP;
+FOR i IN REVERSE 10..1 LOOP ...</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">EXIT / CONTINUE</div>
+        <div class="cmd-desc">跳出循环 / 跳过当前迭代</div>
+        <code class="cmd-code">EXIT WHEN done;
+CONTINUE WHEN skip;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">GOTO</div>
+        <div class="cmd-desc">无条件跳转（谨慎使用）</div>
+        <code class="cmd-code">GOTO cleanup;
+&lt;&lt;cleanup&gt;&gt;
+  NULL;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">NULL</div>
+        <div class="cmd-desc">空语句占位，常用于异常处理中</div>
+        <code class="cmd-code">IF x IS NULL THEN
+  NULL; -- 什么都不做
+END IF;</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 5: 游标 -->
+
+  <div class="panel">
+    <h2 class="panel-title">游标（Cursor）</h2>
+    <p class="panel-desc">逐行处理查询结果集的机制，包含显式游标与隐式游标。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">显式游标声明</div>
+        <div class="cmd-desc">带参数的游标声明</div>
+        <code class="cmd-code">CURSOR c_emp(p_dept VARCHAR2) IS
+  SELECT id, name
+  FROM emp WHERE dept = p_dept;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">OPEN / FETCH / CLOSE</div>
+        <div class="cmd-desc">显式管理游标生命周期</div>
+        <code class="cmd-code">OPEN c_emp('IT');
+LOOP
+  FETCH c_emp INTO v_id, v_name;
+  EXIT WHEN c_emp%NOTFOUND;
+  ...
+END LOOP;
+CLOSE c_emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">FOR 游标循环（推荐）</div>
+        <div class="cmd-desc">自动 OPEN / FETCH / CLOSE</div>
+        <code class="cmd-code">FOR rec IN (SELECT * FROM emp WHERE dept='IT') LOOP
+  DBMS_OUTPUT.PUT_LINE(rec.name);
+END LOOP;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">REF CURSOR</div>
+        <div class="cmd-desc">动态 / 可传递的游标引用</div>
+        <code class="cmd-code">TYPE t_cur IS REF CURSOR;
+v_cur t_cur;
+OPEN v_cur FOR
+  'SELECT * FROM emp WHERE dept = :1'
+  USING 'IT';
+FETCH v_cur INTO v_rec;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">%ROWTYPE</div>
+        <div class="cmd-desc">声明与表行结构一致的记录变量</div>
+        <code class="cmd-code">v_emp  emp%ROWTYPE;
+v_emp.name := 'Alice';</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">%TYPE</div>
+        <div class="cmd-desc">声明与列类型一致的变量</div>
+        <code class="cmd-code">v_name emp.name%TYPE;
+v_sal  emp.sal%TYPE;</code>
+      </div>
+    </div>
+    <div class="tip-box">
+      <h3>游标属性速记</h3>
+      <ul>
+        <li><code>%FOUND</code> &mdash; 最近一次 FETCH 取到数据返回 TRUE</li>
+        <li><code>%NOTFOUND</code> &mdash; 与 FOUND 相反，常用于循环退出</li>
+        <li><code>%ROWCOUNT</code> &mdash; 当前已 FETCH 的行数</li>
+        <li><code>%ISOPEN</code> &mdash; 游标是否已打开</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Panel 6: 异常处理 -->
+
+  <div class="panel">
+    <h2 class="panel-title">异常处理</h2>
+    <p class="panel-desc">捕获、处理或抛出异常，保证程序健壮性。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">EXCEPTION 块</div>
+        <div class="cmd-desc">异常处理区域</div>
+        <code class="cmd-code">BEGIN
+  ...
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('未找到数据');
+  WHEN OTHERS THEN
+    RAISE;
+END;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">RAISE</div>
+        <div class="cmd-desc">重新抛出当前异常</div>
+        <code class="cmd-code">WHEN OTHERS THEN
+  ROLLBACK;
+  RAISE;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">RAISE_APPLICATION_ERROR</div>
+        <div class="cmd-desc">主动抛出带自定义错误码和信息</div>
+        <code class="cmd-code">RAISE_APPLICATION_ERROR(
+  -20001,
+  '用户余额不足，当前余额: ' || v_bal
+);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">自定义异常</div>
+        <div class="cmd-desc">声明并使用自己的异常变量</div>
+        <code class="cmd-code">e_invalid EXCEPTION;
+PRAGMA EXCEPTION_INIT(e_invalid, -2290);
+
+RAISE e_invalid;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">SQLCODE / SQLERRM</div>
+        <div class="cmd-desc">获取错误码和错误信息文本</div>
+        <code class="cmd-code">DBMS_OUTPUT.PUT_LINE(
+  'Error: ' || SQLCODE ||
+  ' - ' || SQLERRM
+);</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">常见内置异常</div>
+        <div class="cmd-desc">无需声明的预定义异常</div>
+        <code class="cmd-code">NO_DATA_FOUND       -- 单行查询无结果
+TOO_MANY_ROWS       -- 单行查询返回多行
+DUP_VAL_ON_INDEX    -- 唯一索引冲突
+ZERO_DIVIDE         -- 除零错误
+VALUE_ERROR         -- 类型转换错误
+INVALID_NUMBER      -- 非法数字
+LOGIN_DENIED        -- 登录拒绝
+PROGRAM_ERROR       -- 内部错误
+STORAGE_ERROR       -- 存储不足
+TIMEOUT_ON_RESOURCE -- 资源超时</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 7: 存储过程 & 函数 -->
+
+  <div class="panel">
+    <h2 class="panel-title">存储过程 & 函数 & 包</h2>
+    <p class="panel-desc">封装业务逻辑到可复用的数据库对象中。</p>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE PROCEDURE</div>
+        <div class="cmd-desc">创建存储过程（无返回值）</div>
+        <code class="cmd-code">CREATE OR REPLACE PROCEDURE
+  p_add_emp(
+    p_id   IN  NUMBER,
+    p_name IN  VARCHAR2,
+    p_out  OUT NUMBER
+  ) IS
+BEGIN
+  INSERT INTO emp VALUES (p_id, p_name);
+  p_out := SQL%ROWCOUNT;
+END;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE FUNCTION</div>
+        <div class="cmd-desc">创建函数（必须 RETURN 值）</div>
+        <code class="cmd-code">CREATE OR REPLACE FUNCTION
+  f_get_name(p_id NUMBER)
+  RETURN VARCHAR2
+IS
+  v_name emp.name%TYPE;
+BEGIN
+  SELECT name INTO v_name
+  FROM emp WHERE id = p_id;
+  RETURN v_name;
+END;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE TRIGGER</div>
+        <div class="cmd-desc">创建触发器（BEFORE / AFTER / INSTEAD OF）</div>
+        <code class="cmd-code">CREATE OR REPLACE TRIGGER
+  trg_emp_audit
+AFTER INSERT OR UPDATE ON emp
+FOR EACH ROW
+BEGIN
+  INSERT INTO audit_log
+  VALUES (:OLD.id, :NEW.name, SYSDATE);
+END;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE PACKAGE</div>
+        <div class="cmd-desc">包规范（接口声明）</div>
+        <code class="cmd-code">CREATE OR REPLACE PACKAGE pkg_emp IS
+  PROCEDURE add_emp(p_id NUMBER, p_name VARCHAR2);
+  FUNCTION get_count RETURN NUMBER;
+END pkg_emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">CREATE PACKAGE BODY</div>
+        <div class="cmd-desc">包体实现（具体逻辑）</div>
+        <code class="cmd-code">CREATE OR REPLACE PACKAGE BODY pkg_emp IS
+  PROCEDURE add_emp(p_id NUMBER, p_name VARCHAR2) IS
+  BEGIN
+    INSERT INTO emp VALUES (p_id, p_name);
+  END;
+  FUNCTION get_count RETURN NUMBER IS
+    v_cnt NUMBER;
+  BEGIN
+    SELECT COUNT(*) INTO v_cnt FROM emp;
+    RETURN v_cnt;
+  END;
+END pkg_emp;</code>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd-name">调用示例</div>
+        <div class="cmd-desc">存储过程和函数的调用方式</div>
+        <code class="cmd-code">-- 匿名块调用
+BEGIN
+  p_add(1, 'Alice');
+  DBMS_OUTPUT.PUT_LINE(f_get(1));
+END;
+
+-- SQL 中只能调用函数
+SELECT f_get_name(id) FROM emp;
+
+-- CALL 语句（过程）
+CALL p_add_emp(2, 'Bob');
+
+-- EXEC 简写（SQL*Plus）
+EXEC p_add_emp(3, 'Cathy');</code>
+      </div>
+    </div>
+
+    <div class="example-block">
+      <h3>完整匿名块模板</h3>
+      <pre><span class="kw">DECLARE</span>
+  <span class="cmt">-- 变量、游标、异常声明区</span>
+  v_name   emp.name<span class="kw">%TYPE</span>;
+  v_cnt    <span class="kw">NUMBER</span> := 0;
+  v_sql    <span class="kw">VARCHAR2</span>(2000);
+
+<span class="kw">BEGIN</span>
+  <span class="cmt">-- 执行区：SQL / 条件 / 循环 / 调用</span>
+  <span class="kw">SELECT</span> name <span class="kw">INTO</span> v_name <span class="kw">FROM</span> emp <span class="kw">WHERE</span> id = 1;
+
+  <span class="kw">IF</span> v_name <span class="kw">IS NOT NULL THEN</span>
+    <span class="kw">UPDATE</span> emp <span class="kw">SET</span> dept = <span class="str">'IT'</span> <span class="kw">WHERE</span> name = v_name;
+    v_cnt := <span class="kw">SQL%ROWCOUNT</span>;
+  <span class="kw">END IF</span>;
+
+  <span class="kw">COMMIT</span>;
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'更新行数: '</span> || v_cnt);
+
+<span class="kw">EXCEPTION</span>
+  <span class="kw">WHEN</span> NO_DATA_FOUND <span class="kw">THEN</span>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'未找到员工'</span>);
+  <span class="kw">WHEN OTHERS THEN</span>
+    <span class="kw">ROLLBACK</span>;
+    <span class="kw">RAISE</span>;
+<span class="kw">END</span>;</pre>
+    </div>
+  </div>
+
+</div>
+
+<footer>PL/SQL 常用命令速查 &mdash; 持续更新中</footer>
+
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+    btn.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.panel').forEach(function(panel, i) {
+    panel.classList.toggle('active', i === idx);
+  });
+}
+</script>
+
+</body>
+</html>
